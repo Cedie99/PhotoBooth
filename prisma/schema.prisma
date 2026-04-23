@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  displayName    String
+  slug           String       @unique
+  role           UserRole     @default(CREATOR)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  memorySites    MemorySite[]
+  templates      Template[]
+  partnerBooths  PartnerBooth[]
+}
+
+model MemorySite {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  title         String
+  eventType     String
+  theme         String
+  isPublic      Boolean     @default(true)
+  publishedAt   DateTime?
+  ownerId       String
+  owner         User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  photoSessions PhotoSession[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model PhotoSession {
+  id               String          @id @default(cuid())
+  sessionCode      String          @unique
+  memorySiteId     String
+  memorySite       MemorySite      @relation(fields: [memorySiteId], references: [id], onDelete: Cascade)
+  boothId          String?
+  booth            PartnerBooth?   @relation(fields: [boothId], references: [id], onDelete: SetNull)
+  customization    Customization?
+  photos           Photo[]
+  createdAt        DateTime        @default(now())
+}
+
+model Photo {
+  id             String       @id @default(cuid())
+  sessionId      String
+  session        PhotoSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  storageUrl     String
+  width          Int
+  height         Int
+  mimeType       String
+  createdAt      DateTime     @default(now())
+}
+
+model Customization {
+  id               String       @id @default(cuid())
+  photoSessionId   String       @unique
+  photoSession     PhotoSession @relation(fields: [photoSessionId], references: [id], onDelete: Cascade)
+  layout           String
+  frame            String
+  filter           String
+  stickersJson     String
+  textOverlay      String
+  updatedAt        DateTime     @updatedAt
+}
+
+model Template {
+  id             String      @id @default(cuid())
+  ownerId        String
+  owner          User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  isPremium      Boolean     @default(false)
+  pricePhp       Int?
+  configJson     String
+  createdAt      DateTime    @default(now())
+}
+
+model PartnerBooth {
+  id              String        @id @default(cuid())
+  operatorId      String
+  operator        User          @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  boothCode       String        @unique
+  locationName    String
+  city            String
+  isActive        Boolean       @default(true)
+  sessions        PhotoSession[]
+  createdAt       DateTime      @default(now())
+}
+
+enum UserRole {
+  CREATOR
+  PARTNER
+  ADMIN
+}

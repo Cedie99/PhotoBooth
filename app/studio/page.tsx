@@ -14,6 +14,8 @@ import {
 import { TemplateGallery } from "@/components/studio/TemplateGallery";
 import { CustomizationPanel } from "@/components/studio/CustomizationPanel";
 import { LivePreview } from "@/components/studio/LivePreview";
+import { StickerCanvas, CanvasElement } from "@/components/studio/StickerCanvas";
+import { ElementPicker } from "@/components/studio/ElementPicker";
 
 export default function StudioPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -31,6 +33,8 @@ export default function StudioPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [showPreview, setShowPreview] = useState(true);
+  const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   const layoutMeta = useMemo(() => {
     return layoutOptions.find((option) => option.value === customization.layout) ?? layoutOptions[1];
@@ -330,9 +334,13 @@ export default function StudioPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg shadow-lg">
+              <a 
+                href="/"
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg shadow-lg hover:scale-105 transition-transform"
+                title="Back to Homepage"
+              >
                 📷
-              </div>
+              </a>
               <div>
                 <h1 className="text-xl font-bold tracking-tight">Studio</h1>
                 <p className="text-xs text-muted-foreground">Create your perfect photo strip</p>
@@ -372,10 +380,10 @@ export default function StudioPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid gap-6 lg:grid-cols-12">
+      <main className="mx-auto max-w-[1600px] px-2 sm:px-3 lg:px-4 py-4">
+        <div className="grid gap-3 lg:grid-cols-12">
           {/* Left Column - Camera & Capture */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="lg:col-span-4 space-y-3">
             {/* Camera Card */}
             <div className="studio-card overflow-hidden">
               <div className="p-4 border-b bg-muted/30">
@@ -494,7 +502,7 @@ export default function StudioPage() {
           </div>
 
           {/* Middle Column - Customization */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-3">
             <div className="studio-card sticky top-24">
               <div className="p-4 border-b bg-muted/30">
                 <h2 className="studio-section-title flex items-center gap-2">
@@ -512,26 +520,38 @@ export default function StudioPage() {
             </div>
           </div>
 
-          {/* Right Column - Live Preview */}
+          {/* Right Column - Live Preview & Stickers */}
           {showPreview && (
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-5">
               <div className="studio-card sticky top-24">
                 <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
                   <h2 className="studio-section-title flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-sm">👁</span>
-                    Preview
+                    <span className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-sm">✏️</span>
+                    Design Canvas
                   </h2>
-                  <span className="text-xs text-muted-foreground">Live</span>
+                  <span className="text-xs text-muted-foreground">Drag & Drop</span>
                 </div>
                 
                 <div className="p-4 space-y-4">
-                  <LivePreview
-                    customization={customization}
-                    layout={layoutMeta}
-                    shots={shots}
-                    isStripLayout={isStripLayout}
-                    maxShots={maxShots}
-                  />
+                  {/* Element Picker - Canva Style */}
+                  <ElementPicker onAddElement={(el) => setCanvasElements([...canvasElements, { ...el, id: Math.random().toString(36).substr(2, 9) }])} />
+
+                  {/* Live Preview with Draggable Elements */}
+                  <StickerCanvas
+                    elements={canvasElements}
+                    onElementsChange={setCanvasElements}
+                    cardRef={previewContainerRef as React.RefObject<HTMLDivElement>}
+                  >
+                    <div ref={previewContainerRef}>
+                      <LivePreview
+                        customization={customization}
+                        layout={layoutMeta}
+                        shots={shots}
+                        isStripLayout={isStripLayout}
+                        maxShots={maxShots}
+                      />
+                    </div>
+                  </StickerCanvas>
 
                   {/* Session ID */}
                   <div className="space-y-1.5">
